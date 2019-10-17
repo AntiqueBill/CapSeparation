@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 import h5py
 import numpy as np
 
-from decoding_nets.customized_net import CustomizedNet
+#from decoding_nets.customized_net import CustomizedNet
 
 
 def load_data(options):
@@ -42,9 +42,9 @@ def get_data(train_ds, valid_ds, bs):
     )
 
 
-def get_model(options):
-    model = CustomizedNet(options.train_net_iter)
-    return model, t.optim.SGD(model.parameters(), lr=options.learning_rate, momentum=options.momentum)
+# def get_model(options):
+#     model = CustomizedNet(options.train_net_iter)
+#     return model, t.optim.SGD(model.parameters(), lr=options.learning_rate, momentum=options.momentum)
 
 
 def loss_batch(model, loss_f, xb, yb, opt=None):
