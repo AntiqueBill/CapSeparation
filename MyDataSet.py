@@ -60,20 +60,14 @@ def ber(y_pred, y_target):
     return t.mean(t.abs(y_pred - y_target))
 
 
-def train_net(train_data_dir, batch_size, epochs):
+def load_train(train_data_dir, batch_size):
     x_train, y_train, x_valid, y_valid = map(t.tensor, (load_data(train_data_dir)))
     train_ds = TensorDataset(x_train, y_train)
     valid_ds = TensorDataset(x_valid, y_valid)
     train_dl, valid_dl = get_data(train_ds, valid_ds, batch_size)
     train_dl = WrappedDataLoader(train_dl, preprocess)
     valid_dl = WrappedDataLoader(valid_dl, preprocess)
-
-    for epoch in range(epochs):
-        for x, y in train_dl:
-            print("training")
-            print("epoch", epoch)
-            print("x", x)
-            print("x", y)
+    return train_dl, valid_dl
 
 if __name__ == '__main__':
-    train_net(train_data_dir='./data/train_channel.mat', batch_size=128, epochs=3)
+    load_train(train_data_dir='./data/train_channel.mat', batch_size=128)
