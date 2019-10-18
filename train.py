@@ -7,12 +7,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-import MyDataSet
-#from model import capsules
-#from loss import SpreadLoss
+
+from model import capsules
+from SpreadLoss import SpreadLoss
+from MyDataSet import load_train
 
 # Training settings
-parser = argparse.ArgumentParser(description='PyTorch CapSeparation')
+parser = argparse.ArgumentParser(description='PyTorch Matrix-Capsules-EM')
 parser.add_argument('--batch-size', type=int, default=128, metavar='N',
                     help='input batch size for training (default: 128)')
 parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -37,49 +38,22 @@ parser.add_argument('--snapshot-folder', type=str, default='./snapshots', metava
                     help='where to store the snapshots')
 parser.add_argument('--data-folder', type=str, default='./data', metavar='DF',
                     help='where to store the datasets')
-parser.add_argument('--dataset', type=str, default='mnist', metavar='D',
-                    help='dataset for training(mnist, smallNORB)')
-
-
-
+parser.add_argument('--dataset', type=str, default='train', metavar='D',
+                    help='dataset for training(train, test)')
 
 
 def get_setting(args):
     kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
     path = os.path.join(args.data_folder, args.dataset)
-    datasets = MyDataSet('./data')
-    if args.dataset == 'mnist':
+    if args.dataset == 'train':
         num_class = 10
-       # train_loader =
-        test_loader = torch.utils.data.DataLoader(
-            datasets.MNIST(path, train=False,
-                           transform=transforms.Compose([
-                               transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
-            batch_size=args.test_batch_size, shuffle=True, **kwargs)
-    elif args.dataset == 'smallNORB':
-        num_class = 5
-        train_loader = torch.utils.data.DataLoader(
-            smallNORB(path, train=True, download=True,
-                      transform=transforms.Compose([
-                          transforms.Resize(48),
-                          transforms.RandomCrop(32),
-                          transforms.ColorJitter(brightness=32. / 255, contrast=0.5),
-                          transforms.ToTensor()
-                      ])),
-            batch_size=args.batch_size, shuffle=True, **kwargs)
-        test_loader = torch.utils.data.DataLoader(
-            smallNORB(path, train=False,
-                      transform=transforms.Compose([
-                          transforms.Resize(48),
-                          transforms.CenterCrop(32),
-                          transforms.ToTensor()
-                      ])),
-            batch_size=args.test_batch_size, shuffle=True, **kwargs)
+        train_loader, test_loader = load_train('./data/train_channel.mat', 128)
+    #elif args.dataset == 'test':
+        # TODO: deal with test data
+    #    num_class = 5
     else:
         raise NameError('Undefined dataset {}'.format(args.dataset))
-    return num_class, train_loader, test_loader
+    return train_loader, test_loader
 
 
 def accuracy(output, target, topk=(1,)):
@@ -193,7 +167,7 @@ def main():
     device = torch.device("cuda" if args.cuda else "cpu")
 
     # datasets
-    num_class, train_loader, test_loader = get_setting(args)
+    train_loader, test_loader = get_setting(args)
 
     # model
     A, B, C, D = 64, 8, 16, 16
