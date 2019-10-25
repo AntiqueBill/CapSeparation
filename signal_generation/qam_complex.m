@@ -1,4 +1,4 @@
-function y=qam_complex(N_code,fc,fs,fd,M)
+function [y, y_complex] = qam_complex(N_code,fc,fs,fd,M)
     N_samples=fs/fd;
     t = 1:N_samples;
     x_qam = randi(M,1,N_code);
@@ -9,4 +9,5 @@ function y=qam_complex(N_code,fc,fs,fd,M)
     for n1=1:N_code
         St_complex((N_samples*(n1-1)+1):(N_samples*(n1-1)+N_samples))=(s_qam(n1)*fc_qam).*gt;
     end
-    y=St_complex;
+    y_complex=St_complex;
+    y = real(y_complex);

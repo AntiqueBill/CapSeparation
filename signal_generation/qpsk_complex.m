@@ -1,4 +1,4 @@
-function y=qpsk_complex(N_code,fc,fs,fd)
+function [y, y_complex]=qpsk_complex(N_code,fc,fs,fd)
     N_samples=fs/fd;
     t = 1:N_samples;
     x_qpsk = randi(4,1,N_code);
@@ -9,4 +9,5 @@ function y=qpsk_complex(N_code,fc,fs,fd)
     for n1=1:N_code
         St_complex((N_samples*(n1-1)+1):(N_samples*(n1-1)+N_samples))=(s_qpsk(n1)*fc_qpsk).*gt;
     end
-    y=St_complex;
+    y_complex=St_complex;
+    y = real(y_complex);

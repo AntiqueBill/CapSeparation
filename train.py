@@ -47,7 +47,7 @@ def get_setting(args):
     path = os.path.join(args.data_folder, args.dataset)
     if args.dataset == 'train':
         num_class = 10
-        train_loader, test_loader = load_train('./data/train_channel.mat', 128)
+        train_loader, test_loader = load_train('./data/train_channel.mat', 128)#训练时test_loader是valid_loader
     #elif args.dataset == 'test':
         # TODO: deal with test data
     #    num_class = 5
