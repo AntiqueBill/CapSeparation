@@ -10,7 +10,7 @@ def load_data(train_data_dir):
     #train_data_dir = './data/'
     allData = h5py.File(train_data_dir,'r')
     x_train = np.transpose(allData['x_train']).astype('float64')
-    y_train = np.transpose(allData['y_train']).astype('float64')
+    y_train = np.transpose(allData['y_transmitter']).astype('float64')
     x_valid = np.transpose(allData['x_valid']).astype('float64')
     y_valid = np.transpose(allData['y_valid']).astype('float64')
 

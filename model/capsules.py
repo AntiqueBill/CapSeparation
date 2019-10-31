@@ -278,10 +278,46 @@ class ConvCaps(nn.Module):
                 v = self.add_coord(v, b, h, w, self.B, self.C, self.psize)
 
             # em_routing
-            _, out = self.caps_em_routing(v, a_in, self.C, self.eps)
+            #_, out = self.caps_em_routing(v, a_in, self.C, self.eps)
+            out_capsule, out_a = self.caps_em_routing(v, a_in, self.C, self.eps)
+            out = torch.cat([out_capsule, out_a], dim=1)# 换成拼接
+            print(out.shape)
 
         return out
 
+class Mask(nn.Module):
+    def __init__(self):
+        super(Mask, self).__init__()
+
+    def forward(self, *input):
+        if type(input) is list:  # true label is provided with shape = [None, n_classes], i.e. one-hot code.
+            assert len(input) == 2
+            inputs, mask = input
+            mask  = K.one_hot(K.cast(mask, 'int32'), inputs.get_shape().as_list()[1])
+        else:  # if no true label, mask by the max length of capsules. Mainly used for prediction
+            # compute lengths of capsules
+            x = torch.sqrt(torch.sum(K.square(input), -1))
+            # generate the mask which is a one-hot code.
+            # mask.shape=[None, n_classes]=[None, num_capsule]
+            _, indices = torch.nn.top_k(x, 2)
+            mask  = torch.one_hot(indices, input.get_shape().as_list()[1])
+
+        # inputs.shape=[None, num_capsule, dim_capsule]
+        # mask.shape=[None, num_capsule]
+        # masked.shape=[None, num_capsule * dim_capsule]
+        masked = torch.batch_dot(mask, input)
+
+        return masked
+
+    def compute_output_shape(self, input_shape):
+        if type(input_shape[0]) is tuple:  # true label provided
+            return tuple([None, 2, input_shape[0][2]])
+        else:  # no true label provided
+            return tuple([None, 2, input_shape[2]])
+
+    def get_config(self):
+        config = super(Mask, self).get_config()
+        return config
 
 class CapsNet(nn.Module):
     """A network with one ReLU convolutional layer followed by
@@ -304,7 +340,7 @@ class CapsNet(nn.Module):
         (_, 4, 4, 32x(4x4+1)) -> 1x1 conv, 10 out capsules
         x -> pose: (_, 10x4x4), activation: (_, 10)
 
-        Note that ClassCaps only outputs activation for each class
+        Note that ClassCaps only outputs activation for each class最后classcaps只输出activation，不输出胶囊
 
     Args:
         A: output channels of normal conv
@@ -317,7 +353,7 @@ class CapsNet(nn.Module):
         iters: number of EM iterations
         ...
     """
-    def __init__(self, A=32, B=32, C=32, D=32, E=10, K=3, P=4, iters=3):
+    def __init__(self, A=32, B=32, C=32, D=32, E=6, K=3, P=4, iters=3):
         super(CapsNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=2, out_channels=A,
                                kernel_size=5, stride=2, padding=2)
@@ -326,11 +362,13 @@ class CapsNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(num_features=A, eps=0.001,
                                  momentum=0.1, affine=True)
         self.relu1 = nn.ReLU(inplace=False)
+        #self.lstm1 = nn.LSTM(input_size=)
         self.primary_caps = PrimaryCaps(A, B, 1, P, stride=1)
         self.conv_caps1 = ConvCaps(B, C, K, P, stride=2, iters=iters)
         self.conv_caps2 = ConvCaps(C, D, K, P, stride=1, iters=iters)
         self.class_caps = ConvCaps(D, E, 1, P, stride=1, iters=iters,
                                         coor_add=True, w_shared=True)
+        #self.mask =
 
     def forward(self, x):
         x = self.conv1(x)
@@ -358,5 +396,5 @@ python -m capsules.py
 ```
 '''
 if __name__ == '__main__':
-    model = capsules(E=10)
+    model = capsules(E=6)
     print(model)
